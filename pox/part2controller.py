@@ -5,6 +5,7 @@
 
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
+import pox.lib.packet as pkt
 
 log = core.getLogger()
 
@@ -24,13 +25,55 @@ class Firewall (object):
     #add switch rules here
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    match.nw_proto = 1
-    match.dl_type = 0x0806
+    # match.in_port = 1
+    match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
+    match.dl_type = pkt.ethernet.IP_TYPE
     msg.match = match
     msg.priority = 3000
-    action = of.ofp_action_output(port = of.OFPP_NORMAL)
-    msg.actions.append(action)
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
     self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REQUEST
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 1
+    match.nw_proto = pkt.arp.REPLY
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REV_REQUEST
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REV_REPLY
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    self.connection.send(msg)
+
+
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     msg.match = match
@@ -38,7 +81,7 @@ class Firewall (object):
     msg.soft_timeout = 0
     msg.priority = 1
     self.connection.send(msg)
-
+  
   def _handle_PacketIn (self, event):
     """
     Packets not handled by the router rules will be
