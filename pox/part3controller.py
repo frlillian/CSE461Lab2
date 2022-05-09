@@ -6,6 +6,7 @@
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
 from pox.lib.addresses import IPAddr, IPAddr6, EthAddr
+import pox.lib.packet as pkt
 
 log = core.getLogger()
 
@@ -48,22 +49,82 @@ class Part3Controller (object):
 
   def s1_setup(self):
     #put switch 1 rules here
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
     pass
 
   def s2_setup(self):
     #put switch 2 rules here
+    # msg = of.ofp_flow_mod()
+    # match = of.ofp_match()
+    # msg.match = match
+    # msg.priority = 3000
+    # msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    # self.connection.send(msg)
     pass
 
   def s3_setup(self):
     #put switch 3 rules here
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
     pass
 
   def cores21_setup(self):
     #put core switch rules here
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    match.nw_src = IPS["hnotrust"][0]
+    match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
+    match.dl_type = pkt.ethernet.IP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    match.nw_src = IPS["h10"][0]
+    msg.match = match
+    msg.hard_timeout = 0
+    msg.soft_timeout = 0
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = 1))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    match.nw_src = IPS["h30"][0]
+    msg.match = match
+    msg.hard_timeout = 0
+    msg.soft_timeout = 0
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = 2))
+    self.connection.send(msg)
     pass
 
   def dcs31_setup(self):
     #put datacenter switch rules here
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    match.nw_src = IPS["hnotrust"][0]
+    match.dl_type = pkt.ethernet.IP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
     pass
 
   #used in part 4 to handle individual ARP packets
@@ -88,7 +149,7 @@ class Part3Controller (object):
       return
 
     packet_in = event.ofp # The actual ofp_packet_in message.
-    print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump())
+    print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
 
 def launch ():
   """

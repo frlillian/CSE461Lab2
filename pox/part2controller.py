@@ -25,12 +25,11 @@ class Firewall (object):
     #add switch rules here
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    # match.in_port = 1
     match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
     match.dl_type = pkt.ethernet.IP_TYPE
     msg.match = match
     msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
@@ -40,7 +39,7 @@ class Firewall (object):
     match.dl_type = pkt.ethernet.ARP_TYPE
     msg.match = match
     msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
@@ -50,7 +49,7 @@ class Firewall (object):
     match.dl_type = pkt.ethernet.ARP_TYPE
     msg.match = match
     msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
@@ -60,7 +59,7 @@ class Firewall (object):
     match.dl_type = pkt.ethernet.ARP_TYPE
     msg.match = match
     msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
@@ -70,7 +69,7 @@ class Firewall (object):
     match.dl_type = pkt.ethernet.ARP_TYPE
     msg.match = match
     msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_NORMAL))
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
 
 
