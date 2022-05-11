@@ -59,12 +59,12 @@ class Part3Controller (object):
 
   def s2_setup(self):
     #put switch 2 rules here
-    # msg = of.ofp_flow_mod()
-    # match = of.ofp_match()
-    # msg.match = match
-    # msg.priority = 3000
-    # msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    # self.connection.send(msg)
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
     pass
 
   def s3_setup(self):
@@ -79,6 +79,7 @@ class Part3Controller (object):
 
   def cores21_setup(self):
     #put core switch rules here
+
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     match.nw_src = IPS["hnotrust"][0]
@@ -90,7 +91,48 @@ class Part3Controller (object):
 
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    match.nw_src = IPS["h10"][0]
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REQUEST
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 1
+    match.nw_proto = pkt.arp.REPLY
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REV_REQUEST
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # match.in_port = 3
+    match.nw_proto = pkt.arp.REV_REPLY
+    match.dl_type = pkt.ethernet.ARP_TYPE
+    msg.match = match
+    msg.priority = 3000
+    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    # msg.match.dl_type = 0x800
+    match.dl_dst = EthAddr("00:00:00:00:00:01") # IPS["h10"][0]
     msg.match = match
     msg.hard_timeout = 0
     msg.soft_timeout = 0
@@ -100,12 +142,34 @@ class Part3Controller (object):
 
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    match.nw_src = IPS["h30"][0]
-    msg.match = match
-    msg.hard_timeout = 0
-    msg.soft_timeout = 0
     msg.priority = 3000
+    match.dl_dst = EthAddr("00:00:00:00:00:02") # IPS["h20"][0]
+    msg.match = match
     msg.actions.append(of.ofp_action_output(port = 2))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.priority = 3000
+    match.dl_dst = EthAddr("00:00:00:00:00:03") # IPS["h20"][0]
+    msg.match = match
+    msg.actions.append(of.ofp_action_output(port = 3))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.priority = 3000
+    match.dl_dst = EthAddr("00:00:00:00:00:04") # IPS["h20"][0]
+    msg.match = match
+    msg.actions.append(of.ofp_action_output(port = 4))
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    match = of.ofp_match()
+    msg.priority = 3000
+    match.dl_dst = EthAddr("00:00:00:00:00:05") # IPS["h20"][0]
+    msg.match = match
+    msg.actions.append(of.ofp_action_output(port = 5))
     self.connection.send(msg)
     pass
 
@@ -142,7 +206,7 @@ class Part3Controller (object):
     Packets not handled by the router rules will be
     forwarded to this method to be handled by the controller
     """
-
+    print(dir(event))
     packet = event.parsed # This is the parsed packet data.
     if not packet.parsed:
       log.warning("Ignoring incomplete packet")
