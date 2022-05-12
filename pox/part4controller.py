@@ -4,7 +4,9 @@
 # which is based on of_tutorial by James McCauley
 
 from pox.core import core
+from pox.lib.packet.ethernet import ethernet, ETHER_BROADCAST
 import pox.openflow.libopenflow_01 as of
+from pox.lib.packet.arp import arp
 from pox.lib.addresses import IPAddr, IPAddr6, EthAddr
 import pox.lib.packet as pkt
 
@@ -29,7 +31,13 @@ class Part3Controller (object):
     # Keep track of the connection to the switch so that we can
     # send it messages!
     self.connection = connection
-
+    self.IPTo = {
+      # '10.0.1.10': [],
+      # '10.0.2.20': [],
+      # '10.0.3.30': [],
+      # '10.0.4.10': [],
+      # '172.16.10.100': []
+    }
     # This binds our PacketIn event listener
     connection.addListeners(self)
     #use the dpid to figure out what switch is being created
@@ -79,7 +87,6 @@ class Part3Controller (object):
 
   def cores21_setup(self):
     #put core switch rules here
-
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     match.nw_src = IPS["hnotrust"][0]
@@ -87,89 +94,6 @@ class Part3Controller (object):
     match.dl_type = pkt.ethernet.IP_TYPE
     msg.match = match
     msg.priority = 3000
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    # match.in_port = 3
-    match.nw_proto = pkt.arp.REQUEST
-    match.dl_type = pkt.ethernet.ARP_TYPE
-    msg.match = match
-    msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    # match.in_port = 1
-    match.nw_proto = pkt.arp.REPLY
-    match.dl_type = pkt.ethernet.ARP_TYPE
-    msg.match = match
-    msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    # match.in_port = 3
-    match.nw_proto = pkt.arp.REV_REQUEST
-    match.dl_type = pkt.ethernet.ARP_TYPE
-    msg.match = match
-    msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    # match.in_port = 3
-    match.nw_proto = pkt.arp.REV_REPLY
-    match.dl_type = pkt.ethernet.ARP_TYPE
-    msg.match = match
-    msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    # msg.match.dl_type = 0x800
-    match.dl_dst = EthAddr("00:00:00:00:00:01") # IPS["h10"][0]
-    msg.match = match
-    msg.hard_timeout = 0
-    msg.soft_timeout = 0
-    msg.priority = 3000
-    msg.actions.append(of.ofp_action_output(port = 1))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.priority = 3000
-    match.dl_dst = EthAddr("00:00:00:00:00:02") # IPS["h20"][0]
-    msg.match = match
-    msg.actions.append(of.ofp_action_output(port = 2))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.priority = 3000
-    match.dl_dst = EthAddr("00:00:00:00:00:03") # IPS["h20"][0]
-    msg.match = match
-    msg.actions.append(of.ofp_action_output(port = 3))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.priority = 3000
-    match.dl_dst = EthAddr("00:00:00:00:00:04") # IPS["h20"][0]
-    msg.match = match
-    msg.actions.append(of.ofp_action_output(port = 4))
-    self.connection.send(msg)
-
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.priority = 3000
-    match.dl_dst = EthAddr("00:00:00:00:00:05") # IPS["h20"][0]
-    msg.match = match
-    msg.actions.append(of.ofp_action_output(port = 5))
     self.connection.send(msg)
     pass
 
@@ -210,9 +134,57 @@ class Part3Controller (object):
     if not packet.parsed:
       log.warning("Ignoring incomplete packet")
       return
-
+    print(pkt.ethernet.IP_TYPE)
     packet_in = event.ofp # The actual ofp_packet_in message.
-    print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
+    # print(dir(packet))
+    if (self.connection.dpid == 21):
+      # if packet.next.srcip not in self.IPTo :
+      #   self.ITTo[packet.next.srcip] = {}
+      if packet.type == packet.ARP_TYPE:
+        self.IPTo[packet.next.protosrc] = (packet_in.in_port, packet.src)
+        a = packet.next
+        r = arp()
+        r.hwtype = a.hwtype
+        r.prototype = a.prototype
+        r.hwlen = a.hwlen
+        r.protolen = a.protolen
+        r.opcode = arp.REPLY
+        r.hwdst = a.hwsrc
+        r.protodst = a.protosrc
+        r.protosrc = a.protodst
+        r.hwsrc = EthAddr("00:00:00:00:00:00")
+        e = ethernet(type=packet.type, src=EthAddr("00:00:00:00:00:00"),
+                      dst=a.hwsrc)
+        e.set_payload(r)
+        msg = of.ofp_packet_out()
+        msg.data = e.pack()
+        msg.actions.append(of.ofp_action_output(port =
+                                                of.OFPP_IN_PORT))
+        msg.in_port = packet_in.in_port
+        event.connection.send(msg)
+
+        msg = of.ofp_flow_mod()
+        match = of.ofp_match()
+        match.dl_type = 0x0800
+        match.nw_dst = packet.next.protosrc
+        msg.match = match
+        msg.priority = 3000
+        msg.actions.append(of.ofp_action_output(port = self.IPTo[packet.next.protosrc][0]))
+        self.connection.send(msg)
+
+        msg = of.ofp_flow_mod()
+        match = of.ofp_match()
+        match.dl_type = 0x0806
+        match.nw_dst = packet.next.protosrc
+        msg.match = match
+        msg.priority = 3000
+        msg.actions.append(of.ofp_action_output(port = self.IPTo[packet.next.protosrc][0]))
+        self.connection.send(msg)
+      else:
+        print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
+    else:
+      print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
+
 
 def launch ():
   """
