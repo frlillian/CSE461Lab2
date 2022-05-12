@@ -93,7 +93,7 @@ class Part4Controller (object):
     match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
     match.dl_type = pkt.ethernet.IP_TYPE
     msg.match = match
-    msg.priority = 3000
+    msg.priority = 5000
     self.connection.send(msg)
     pass
 
@@ -139,8 +139,9 @@ class Part4Controller (object):
     if (self.connection.dpid == 21):
       # if packet.next.srcip not in self.IPTo :
       #   self.ITTo[packet.next.srcip] = {}
-      if packet.type == packet.ARP_TYPE and packet.next.protosrc not in self.IPTo:
+      if packet.type == packet.ARP_TYPE:
         self.IPTo[packet.next.protosrc] = (packet_in.in_port, packet.src)
+        print(self.IPTo)
         a = packet.next
         r = arp()
         r.hwtype = a.hwtype
@@ -167,9 +168,10 @@ class Part4Controller (object):
         match.dl_type = pkt.ethernet.IP_TYPE
         match.nw_dst = packet.next.protosrc
         msg.match = match
-        msg.priority = 3000
+        msg.priority = 3001
         msg.actions.append(of.ofp_action_output(port = packet_in.in_port))
         self.connection.send(msg)
+        self.resend_packet(e.pack(), event.port)
       else:
         print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
     else:
