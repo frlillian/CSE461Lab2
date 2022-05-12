@@ -58,9 +58,7 @@ class Part4Controller (object):
   def s1_setup(self):
     #put switch 1 rules here
     msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.match = match
-    msg.priority = 3000
+    msg.priority = 0
     msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
     pass
@@ -68,9 +66,7 @@ class Part4Controller (object):
   def s2_setup(self):
     #put switch 2 rules here
     msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.match = match
-    msg.priority = 3000
+    msg.priority = 0
     msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
     pass
@@ -78,9 +74,7 @@ class Part4Controller (object):
   def s3_setup(self):
     #put switch 3 rules here
     msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.match = match
-    msg.priority = 3000
+    msg.priority = 0
     msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
     pass
@@ -88,29 +82,32 @@ class Part4Controller (object):
   def cores21_setup(self):
     #put core switch rules here
     msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    match.nw_src = IPS["hnotrust"][0]
-    match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
-    match.dl_type = pkt.ethernet.IP_TYPE
-    msg.match = match
-    msg.priority = 5000
+    msg.match.nw_src = (IPAddr(IPS["hnotrust"][0]), 24)
+    msg.match.nw_proto = pkt.ipv4.ICMP_PROTOCOL
+    msg.match.dl_type = ethernet.IP_TYPE
+    msg.priority = 2
+    self.connection.send(msg)
+
+    msg = of.ofp_flow_mod()
+    msg.match.nw_src = (IPAddr(IPS["hnotrust"][0]), 24)
+    msg.match.nw_dst = (IPAddr(IPS["serv1"][0]), 24)
+    msg.match.dl_type = ethernet.IP_TYPE
+    msg.priority = 2
     self.connection.send(msg)
     pass
 
   def dcs31_setup(self):
     #put datacenter switch rules here
-    msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    match.nw_src = IPS["hnotrust"][0]
-    match.dl_type = pkt.ethernet.IP_TYPE
-    msg.match = match
-    msg.priority = 3000
-    self.connection.send(msg)
+    # msg = of.ofp_flow_mod()
+    # match = of.ofp_match()
+    # match.nw_src = IPS["hnotrust"][0]
+    # match.dl_type = pkt.ethernet.IP_TYPE
+    # msg.match = match
+    # msg.priority = 3000
+    # self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
-    match = of.ofp_match()
-    msg.match = match
-    msg.priority = 3000
+    msg.priority = 0
     msg.actions.append(of.ofp_action_output(port = of.OFPP_FLOOD))
     self.connection.send(msg)
     pass
@@ -136,46 +133,62 @@ class Part4Controller (object):
       return
     packet_in = event.ofp # The actual ofp_packet_in message.
     # print(dir(packet))
-    if (self.connection.dpid == 21):
+    # if (self.connection.dpid == 21):
       # if packet.next.srcip not in self.IPTo :
       #   self.ITTo[packet.next.srcip] = {}
-      if packet.type == packet.ARP_TYPE:
-        self.IPTo[packet.next.protosrc] = (packet_in.in_port, packet.src)
-        print(self.IPTo)
-        a = packet.next
-        r = arp()
-        r.hwtype = a.hwtype
-        r.prototype = a.prototype
-        r.hwlen = a.hwlen
-        r.protolen = a.protolen
-        r.opcode = arp.REPLY
-        r.hwdst = a.hwsrc
-        r.protodst = a.protosrc
-        r.protosrc = a.protodst
-        r.hwsrc = EthAddr("00:00:00:00:00:00")
-        e = ethernet(type=packet.type, src=EthAddr("00:00:00:00:00:00"),
-                      dst=a.hwsrc)
-        e.set_payload(r)
-        msg = of.ofp_packet_out()
-        msg.data = e.pack()
-        msg.actions.append(of.ofp_action_output(port =
-                                                of.OFPP_IN_PORT))
-        msg.in_port = packet_in.in_port
-        event.connection.send(msg)
+    if packet.type == packet.ARP_TYPE:
+      if packet.payload.protosrc not in self.IPTo:
+        self.IPTo[packet.payload.protosrc] = (packet_in.in_port, packet.src)
+        # print(self.IPTo)
+        # a = packet.next
+        # r = arp()
+        # r.hwtype = a.hwtype
+        # r.prototype = a.prototype
+        # r.hwlen = a.hwlen
+        # r.protolen = a.protolen
+        # r.opcode = arp.REPLY
+        # r.hwdst = a.hwsrc
+        # r.protodst = a.protosrc
+        # r.protosrc = a.protodst
+        # r.hwsrc = EthAddr("00:00:00:00:00:00")
+        # e = ethernet(type=packet.type, src=EthAddr("00:00:00:00:00:00"),
+        #               dst=a.hwsrc)
+        # e.set_payload(r)
+        # msg = of.ofp_packet_out()
+        # msg.data = e.pack()
+        # msg.actions.append(of.ofp_action_output(port =
+        #                                         of.OFPP_IN_PORT))
+        # msg.in_port = packet_in.in_port
+        # event.connection.send(msg)
 
         msg = of.ofp_flow_mod()
-        match = of.ofp_match()
-        match.dl_type = pkt.ethernet.IP_TYPE
-        match.nw_dst = packet.next.protosrc
-        msg.match = match
-        msg.priority = 3001
+        msg.match.dl_type = ethernet.IP_TYPE
+        msg.match.nw_dst = packet.payload.protosrc
+        msg.priority = 1
+        msg.actions.append(of.ofp_action_dl_addr.set_dst(packet.src))
         msg.actions.append(of.ofp_action_output(port = packet_in.in_port))
         self.connection.send(msg)
-        self.resend_packet(e.pack(), event.port)
-      else:
-        print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
+
+      if packet.payload.opcode == arp.REQUEST:
+        print("REQUEST")
+        arp_reply = arp()
+        arp_reply.opcode = arp.REPLY
+        coreAddr = EthAddr("de:ad:be:ef:ca:fe")
+        arp_reply.hwsrc = coreAddr
+        arp_reply.hwdst = packet.src
+        arp_reply.protosrc = packet.payload.protodst
+        arp_reply.protodst = packet.payload.protosrc
+
+        ether_pkt = ethernet()
+        ether_pkt.type = ethernet.ARP_TYPE
+        ether_pkt.dst = packet.src
+        ether_pkt.src = coreAddr
+        ether_pkt.set_payload(arp_reply)
+        self.resend_packet(ether_pkt.pack(), packet_in.in_port)
     else:
       print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
+  # else:
+  #   print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
 
 
 def launch ():

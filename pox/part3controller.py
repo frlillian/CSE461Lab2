@@ -131,9 +131,7 @@ class Part3Controller (object):
 
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    # msg.match.dl_type = 0x800
-    # match.dl_dst = EthAddr("00:00:00:00:00:01") # IPS["h10"][0]
-    match.nw_dst = "10.0.1.10"
+    match.nw_dst = (IPAddr(IPS["h10"][0]), 24)
     msg.match = match
     msg.hard_timeout = 0
     msg.soft_timeout = 0
@@ -144,8 +142,7 @@ class Part3Controller (object):
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     msg.priority = 3000
-    # match.dl_dst = EthAddr("00:00:00:00:00:02") # IPS["h20"][0]
-    match.nw_dst = "10.0.2.20"
+    match.nw_dst = (IPAddr(IPS["h20"][0]), 24)
     msg.match = match
     msg.actions.append(of.ofp_action_output(port = 2))
     self.connection.send(msg)
@@ -153,8 +150,7 @@ class Part3Controller (object):
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     msg.priority = 3000
-    # match.dl_dst = EthAddr("00:00:00:00:00:03") # IPS["h20"][0]
-    match.nw_dst = "10.0.3.30"
+    match.nw_dst = (IPAddr(IPS["h30"][0]), 24)
     msg.match = match
     msg.actions.append(of.ofp_action_output(port = 3))
     self.connection.send(msg)
@@ -162,8 +158,7 @@ class Part3Controller (object):
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     msg.priority = 3000
-    # match.dl_dst = EthAddr("00:00:00:00:00:04") # IPS["h20"][0]
-    match.nw_dst = "10.0.4.10"
+    match.nw_dst = (IPAddr(IPS["serv1"][0]), 24)
     msg.match = match
     msg.actions.append(of.ofp_action_output(port = 4))
     self.connection.send(msg)
@@ -171,8 +166,7 @@ class Part3Controller (object):
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
     msg.priority = 3000
-    # match.dl_dst = EthAddr("00:00:00:00:00:05") # IPS["h20"][0]
-    match.nw_dst = "172.16.10.100"
+    match.nw_dst = (IPAddr(IPS["hnotrust"][0]), 24) 
     msg.match = match
     msg.actions.append(of.ofp_action_output(port = 5))
     self.connection.send(msg)
@@ -182,7 +176,7 @@ class Part3Controller (object):
     #put datacenter switch rules here
     msg = of.ofp_flow_mod()
     match = of.ofp_match()
-    match.nw_src = IPS["hnotrust"][0]
+    match.nw_src = (IPAddr(IPS["hnotrust"][0]), 24)
     match.dl_type = pkt.ethernet.IP_TYPE
     msg.match = match
     msg.priority = 3000
