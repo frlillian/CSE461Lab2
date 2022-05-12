@@ -98,13 +98,6 @@ class Part4Controller (object):
 
   def dcs31_setup(self):
     #put datacenter switch rules here
-    # msg = of.ofp_flow_mod()
-    # match = of.ofp_match()
-    # match.nw_src = IPS["hnotrust"][0]
-    # match.dl_type = pkt.ethernet.IP_TYPE
-    # msg.match = match
-    # msg.priority = 3000
-    # self.connection.send(msg)
 
     msg = of.ofp_flow_mod()
     msg.priority = 0
@@ -132,34 +125,9 @@ class Part4Controller (object):
       log.warning("Ignoring incomplete packet")
       return
     packet_in = event.ofp # The actual ofp_packet_in message.
-    # print(dir(packet))
-    # if (self.connection.dpid == 21):
-      # if packet.next.srcip not in self.IPTo :
-      #   self.ITTo[packet.next.srcip] = {}
     if packet.type == packet.ARP_TYPE:
       if packet.payload.protosrc not in self.IPTo:
         self.IPTo[packet.payload.protosrc] = (packet_in.in_port, packet.src)
-        # print(self.IPTo)
-        # a = packet.next
-        # r = arp()
-        # r.hwtype = a.hwtype
-        # r.prototype = a.prototype
-        # r.hwlen = a.hwlen
-        # r.protolen = a.protolen
-        # r.opcode = arp.REPLY
-        # r.hwdst = a.hwsrc
-        # r.protodst = a.protosrc
-        # r.protosrc = a.protodst
-        # r.hwsrc = EthAddr("00:00:00:00:00:00")
-        # e = ethernet(type=packet.type, src=EthAddr("00:00:00:00:00:00"),
-        #               dst=a.hwsrc)
-        # e.set_payload(r)
-        # msg = of.ofp_packet_out()
-        # msg.data = e.pack()
-        # msg.actions.append(of.ofp_action_output(port =
-        #                                         of.OFPP_IN_PORT))
-        # msg.in_port = packet_in.in_port
-        # event.connection.send(msg)
 
         msg = of.ofp_flow_mod()
         msg.match.dl_type = ethernet.IP_TYPE
@@ -170,7 +138,6 @@ class Part4Controller (object):
         self.connection.send(msg)
 
       if packet.payload.opcode == arp.REQUEST:
-        print("REQUEST")
         arp_reply = arp()
         arp_reply.opcode = arp.REPLY
         coreAddr = EthAddr("de:ad:be:ef:ca:fe")
@@ -187,8 +154,6 @@ class Part4Controller (object):
         self.resend_packet(ether_pkt.pack(), packet_in.in_port)
     else:
       print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
-  # else:
-  #   print ("Unhandled packet from " + str(self.connection.dpid) + ":" + packet.dump() + "PORT:: " + str(packet_in.in_port))
 
 
 def launch ():
